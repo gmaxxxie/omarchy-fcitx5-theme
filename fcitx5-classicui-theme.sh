@@ -201,6 +201,22 @@ done
 # 写入 classicui 配置
 conf="$HOME/.config/fcitx5/conf/classicui.conf"
 mkdir -p "$(dirname "$conf")"
+
+# 记录"接管前"的原始主题, 供卸载时还原 (只记录一次)
+STATE_DIR="$HOME/.local/state/omarchy-fcitx5-theme"
+STATE_FILE="$STATE_DIR/state"
+if [[ ! -f "$STATE_FILE" ]]; then
+  prev_theme=""
+  if [[ -f "$conf" ]]; then
+    prev_theme="$(sed -nE 's/^Theme=([^[:space:]]+)[[:space:]]*$/\1/p' "$conf" | head -1 || true)"
+  fi
+  case "$prev_theme" in
+    omarchy-*) prev_theme="" ;;  # 接管前已是本扩展生成的主题, 无法得知更早的值
+  esac
+  mkdir -p "$STATE_DIR"
+  printf 'prev_theme=%s\n' "$prev_theme" > "$STATE_FILE"
+fi
+
 if [[ -f "$conf" ]] && grep -q "^Theme=omarchy-$slug\$" "$conf"; then
   : # 已指向当前主题
 elif [[ -f "$conf" ]] && grep -q "^Theme=" "$conf"; then

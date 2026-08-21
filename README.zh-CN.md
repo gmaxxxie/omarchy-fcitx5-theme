@@ -44,10 +44,16 @@ git clone https://github.com/gmaxxxie/omarchy-fcitx5-theme && cd omarchy-fcitx5-
 ## 卸载
 
 ```bash
-omarchy plugin remove gmaxxxie.fcitx5-theme
+omarchy plugin remove gmaxxxie.fcitx5-theme   # 仅移除插件
 ```
 
-或使用仓库内的 `./uninstall.sh`（同时清理 hook、生成的主题和配置，恢复默认）。
+完整清理（兜底 hook、生成的主题、配置还原）请运行仓库内的 `./uninstall.sh`：
+
+- 只删除**本扩展生成的**主题目录（以 `theme.conf` 内的 `Generated from Omarchy theme:`
+  标记识别）；同名但属用户自建的 `omarchy-*` 主题**一律保留**，不会被误删。
+- 还原安装**之前** classicui 使用的主题（首次运行时记录在
+  `~/.local/state/omarchy-fcitx5-theme/state`）；无法找回时回退到 fcitx5 默认主题。
+- 移除 `theme-set` hook 与状态文件，并重启 fcitx5 使还原生效。
 
 ## 效果
 
