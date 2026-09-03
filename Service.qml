@@ -41,7 +41,12 @@ Item {
   Process {
     id: syncProc
     command: ["/bin/bash", root.generator, "current", "--quiet"]
-    onFailed: console.warn("fcitx5-theme", "sync failed")
+    // Quickshell's Process exposes started/exited, never failed. Assigning to a
+    // non-existent property aborts the whole service load, so the candidate box
+    // silently stops following the Omarchy theme.
+    onExited: (exitCode) => {
+      if (exitCode !== 0) console.warn("fcitx5-theme", "sync failed, exit", exitCode)
+    }
   }
 
   function sync() {
