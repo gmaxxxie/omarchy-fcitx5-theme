@@ -62,7 +62,7 @@ omarchy plugin remove gmaxxxie.fcitx5-theme   # 仅移除插件
 | 面板底色 | `background`（深色主题）/ `lighter_background`（浅色主题） |
 | 候选文字 | `foreground`（深色主题）/ `dark_foreground`（浅色主题） |
 | 选中候选高亮底 | `accent` |
-| 选中候选文字 | `darker_background`（深色主题）/ `dark_foreground`（浅色主题） |
+| 选中候选文字 | `darker_background`（深色主题）/ `lighter_background`（浅色主题） |
 | 面板边框 | `selection`（缺失时回退 `muted`） |
 | 菜单分隔线 | `bright_foreground`（缺失时回退边框色） |
 

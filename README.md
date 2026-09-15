@@ -67,7 +67,7 @@ from this repo:
 | Panel background | `background` (dark themes) / `lighter_background` (light themes) |
 | Candidate text | `foreground` (dark themes) / `dark_foreground` (light themes) |
 | Selected candidate highlight | `accent` |
-| Selected candidate text | `darker_background` (dark themes) / `dark_foreground` (light themes) |
+| Selected candidate text | `darker_background` (dark themes) / `lighter_background` (light themes) |
 | Panel border | `selection` (falls back to `muted`) |
 | Menu separator | `bright_foreground` (falls back to border color) |
 

@@ -45,11 +45,12 @@ sel="$(get selection)"; [[ -n "$sel" ]]  || sel="$(get muted)"
 dark_bg="$(get darker_background)"; [[ -n "$dark_bg" ]] || dark_bg="$(get dark_background)"
 [[ -n "$dark_bg" ]] || dark_bg="#11111b"
 
-# 高亮（选中候选）文字颜色：深色主题用深底深字，浅色主题用深色文字
+# 高亮（选中候选）文字颜色：亮色主题使用与 darker_background 对应的
+# lighter_background，缺失时才回退白色。
 if [[ "$mode" == "light" ]]; then
-  hl_text="$(get dark_foreground)"; [[ -n "$hl_text" ]] || hl_text="#1e1e2e"
+  hl_text="$(get lighter_background)"; [[ -n "$hl_text" ]] || hl_text="#ffffff"
   panel_bg="$(get lighter_background)"; [[ -n "$panel_bg" ]] || panel_bg="$bg"
-  panel_fg="$hl_text"
+  panel_fg="$(get dark_foreground)"; [[ -n "$panel_fg" ]] || panel_fg="$fg"
 else
   hl_text="$dark_bg"
   panel_bg="$bg"
