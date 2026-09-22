@@ -45,17 +45,40 @@ sel="$(get selection)"; [[ -n "$sel" ]]  || sel="$(get muted)"
 dark_bg="$(get darker_background)"; [[ -n "$dark_bg" ]] || dark_bg="$(get dark_background)"
 [[ -n "$dark_bg" ]] || dark_bg="#11111b"
 
-# 高亮（选中候选）文字颜色：深色主题用深底深字，浅色主题用深色文字
+# 面板背景 / 普通候选文字：浅色主题用更浅的背景层；普通文字始终用主前景色
+# （浅色主题的 dark_foreground 是偏淡的灰，直接拿来当文字会看不清）
 if [[ "$mode" == "light" ]]; then
-  hl_text="$(get dark_foreground)"; [[ -n "$hl_text" ]] || hl_text="#1e1e2e"
   panel_bg="$(get lighter_background)"; [[ -n "$panel_bg" ]] || panel_bg="$bg"
-  panel_fg="$hl_text"
 else
-  hl_text="$dark_bg"
   panel_bg="$bg"
-  panel_fg="$fg"
 fi
-hl_bg="$accent"
+panel_fg="$fg"
+
+# 选中候选：白字 + 深色底（未选中是深字 + 浅底）。
+# 按 accent 的感知亮度决定选中文字颜色：偏亮 -> 主题深底色，偏暗 -> 白色。
+# 用白字时把 accent 压暗到感知亮度 ~85，保证白字对比度（约 6:1 以上）。
+luma() {
+  local h="${1#\#}"; h="${h:0:6}"
+  local r=$((16#${h:0:2})) g=$((16#${h:2:2})) b=$((16#${h:4:2}))
+  echo $(( (r * 299 + g * 587 + b * 114) / 1000 ))
+}
+scale_color() {  # $1=#rrggbb  $2=百分比
+  local h="${1#\#}"
+  local r=$((16#${h:0:2})) g=$((16#${h:2:2})) b=$((16#${h:4:2}))
+  printf '#%02x%02x%02x' $((r * $2 / 100)) $((g * $2 / 100)) $((b * $2 / 100))
+}
+acc_luma="$(luma "$accent")"
+if (( acc_luma >= 150 )); then
+  hl_text="$dark_bg"
+  hl_bg="$accent"
+else
+  hl_text="#ffffff"
+  if (( acc_luma > 85 )); then
+    hl_bg="$(scale_color "$accent" $(( 85 * 100 / acc_luma )))"
+  else
+    hl_bg="$accent"
+  fi
+fi
 border="$sel"
 menu_sep="$(get bright_foreground)"; [[ -n "$menu_sep" ]] || menu_sep="$border"
 
@@ -74,7 +97,7 @@ ScaleWithDPI=True
 [InputPanel]
 NormalColor=$panel_fg
 HighlightCandidateColor=$hl_text
-HighlightColor=$panel_fg
+HighlightColor=$hl_text
 HighlightBackgroundColor=$hl_bg
 PageButtonAlignment=Last Candidate
 
@@ -227,10 +250,23 @@ else
   changed=1
 fi
 
-# 仅在主题实际变化时重启 fcitx5（classicui 只在启动时读主题）
+# 仅在主题实际变化时重启 fcitx5（classicui 只在启动/重载时读主题）
+#
+# 注意：fcitx5 也可能是在 unit 之外被 D-Bus 激活启动的，此时它持有
+# org.fcitx.Fcitx5。`systemctl --user restart` 会返回成功，但 unit 里的实例
+# 一启动就因名字被占而退出，旧进程继续用旧主题 —— 看起来重启了其实没有。
+# 所以先停 unit、杀掉残留实例、等它释放总线名，再启动 unit 让它接管。
+# （与 /usr/bin/omarchy-restart-xcompose 同一思路。）
 if [[ $changed == 1 ]]; then
-  if systemctl --user restart omarchy-fcitx5.service 2>/dev/null; then
-    :
+  if systemctl --user stop omarchy-fcitx5.service 2>/dev/null; then
+    pkill -x fcitx5 2>/dev/null || true
+    for _ in $(seq 1 50); do
+      pgrep -x fcitx5 >/dev/null 2>&1 || break
+      sleep 0.1
+    done
+    systemctl --user reset-failed omarchy-fcitx5.service 2>/dev/null || true
+    systemctl --user start omarchy-fcitx5.service 2>/dev/null \
+      || fcitx5 -d 2>/dev/null || true
   else
     fcitx5-remote -r 2>/dev/null || true
   fi
