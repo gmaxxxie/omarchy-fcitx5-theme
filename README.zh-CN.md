@@ -60,13 +60,14 @@ omarchy plugin remove gmaxxxie.fcitx5-theme   # 仅移除插件
 | 元素 | 映射（colors.toml） |
 |------|---------------------|
 | 面板底色 | `background`（深色主题）/ `lighter_background`（浅色主题） |
-| 候选文字 | `foreground`（深色主题）/ `dark_foreground`（浅色主题） |
-| 选中候选高亮底 | `accent` |
-| 选中候选文字 | `darker_background`（深色主题）/ `dark_foreground`（浅色主题） |
+| 候选文字 | `foreground` |
+| 选中候选高亮底 | `accent`；选中文字为白色时压暗到感知亮度 ≈ 85 |
+| 选中候选文字 | 白色；accent 偏亮（亮度 ≥ 150）时用 `darker_background` |
 | 面板边框 | `selection`（缺失时回退 `muted`） |
 | 菜单分隔线 | `bright_foreground`（缺失时回退边框色） |
 
-深浅主题均支持：`mode = "light"` 的主题自动使用浅色面板 + 深色文字。
+深浅主题均支持：`mode = "light"` 的主题使用浅色面板 + 深色文字，选中候选则是白字 +
+压暗后的 accent 底色，无论 accent 多浅都保持可读。
 
 ## 手动操作
 
@@ -81,7 +82,7 @@ omarchy plugin remove gmaxxxie.fcitx5-theme   # 仅移除插件
 手动编辑生成的主题文件可微调（字号、内边距等），然后重启 fcitx5：
 
 ```bash
-systemctl --user restart omarchy-fcitx5.service
+omarchy restart xcompose   # 不要用 systemctl --user restart omarchy-fcitx5.service
 ```
 
 > 注意：重新运行生成器会覆盖手动修改。
@@ -89,8 +90,11 @@ systemctl --user restart omarchy-fcitx5.service
 ## 常见问题
 
 **Q: 候选框没变化？**
-重启 fcitx5：`systemctl --user restart omarchy-fcitx5.service`。
-classicui 只在启动时读主题，`fcitx5-remote -r` 重载配置不会换主题。
+重启 fcitx5：`omarchy restart xcompose`。
+classicui 只在启动时读主题，`fcitx5-remote -r` 重载配置不会换主题。另外，当 fcitx5 是在 unit
+之外启动的（例如被 D-Bus 激活）时，直接 `systemctl --user restart omarchy-fcitx5.service` 不够：
+残留进程仍持有 `org.fcitx.Fcitx5`，unit 里的实例一启动就退出，旧主题继续生效。`omarchy restart
+xcompose` 会先停 unit、杀掉残留实例，再启动 unit。
 
 **Q: 插件已启用但切主题没反应？**
 检查服务组件是否加载：`omarchy plugin list` 应显示

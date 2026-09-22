@@ -65,14 +65,15 @@ from this repo:
 | Element | Mapping (colors.toml) |
 |---------|------------------------|
 | Panel background | `background` (dark themes) / `lighter_background` (light themes) |
-| Candidate text | `foreground` (dark themes) / `dark_foreground` (light themes) |
-| Selected candidate highlight | `accent` |
-| Selected candidate text | `darker_background` (dark themes) / `dark_foreground` (light themes) |
+| Candidate text | `foreground` |
+| Selected candidate background | `accent`, deepened to luma ≈ 85 when the selected text is white |
+| Selected candidate text | white, or `darker_background` when the accent is light (luma ≥ 150) |
 | Panel border | `selection` (falls back to `muted`) |
 | Menu separator | `bright_foreground` (falls back to border color) |
 
-Both light and dark themes are supported: themes with `mode = "light"` automatically use a
-light panel with dark text.
+Both light and dark themes are supported: light themes (`mode = "light"`) get a light panel
+with dark text, and the selected candidate is drawn as white text on a deepened accent so it
+stays readable no matter how light the accent is.
 
 ## Manual usage
 
@@ -87,7 +88,7 @@ light panel with dark text.
 You can fine-tune the generated theme file by hand (font size, padding, etc.), then restart fcitx5:
 
 ```bash
-systemctl --user restart omarchy-fcitx5.service
+omarchy restart xcompose
 ```
 
 > Note: re-running the generator overwrites manual edits.
@@ -95,8 +96,12 @@ systemctl --user restart omarchy-fcitx5.service
 ## FAQ
 
 **Q: The candidate box didn't change?**
-Restart fcitx5: `systemctl --user restart omarchy-fcitx5.service`.
-classicui reads the theme only at startup; `fcitx5-remote -r` reloads config but does not swap themes.
+Restart fcitx5 with `omarchy restart xcompose`.
+classicui reads the theme only at startup, and `fcitx5-remote -r` reloads config without swapping
+themes. A plain `systemctl --user restart omarchy-fcitx5.service` is not enough when fcitx5 was
+started outside the unit (e.g. D-Bus activated): the unit's instance exits because the stray
+process still owns `org.fcitx.Fcitx5`, so the old theme keeps being served. `omarchy restart
+xcompose` stops the unit, kills the stray instance, then starts the unit.
 
 **Q: The plugin is enabled but switching themes has no effect?**
 Check whether the service component is loaded: `omarchy plugin list` should show
