@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "gmaxxxie.fcitx5-theme",
   "name": "fcitx5 Theme Follower",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "author": "max",
   "license": "MIT",
   "description": "Keep the fcitx5 candidate-box theme in sync with the Omarchy theme. Watches the current theme state and regenerates the candidate panel colors live.",

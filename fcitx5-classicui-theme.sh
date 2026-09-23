@@ -85,6 +85,18 @@ menu_sep="$(get bright_foreground)"; [[ -n "$menu_sep" ]] || menu_sep="$border"
 out="$HOME/.local/share/fcitx5/themes/omarchy-$slug"
 mkdir -p "$out"
 
+# 翻页 / 菜单图标：fcitx5 5.1.x 起官方 default 主题只发 .svg（更早的版本是 .png）。
+# 按系统实际提供的那种扩展名引用和拷贝 —— 引用了不存在的文件时 fcitx5 既不回退
+# 也不报错，只是静默不绘制（翻页箭头/菜单勾选会凭空消失）。
+icon_dir="/usr/share/fcitx5/themes/default"
+icon_ext="png"
+for ext in svg png; do
+  if [[ -f "$icon_dir/prev.$ext" ]]; then
+    icon_ext="$ext"
+    break
+  fi
+done
+
 tmp="$out/.theme.conf.tmp"
 cat > "$tmp" <<EOF
 [Metadata]
@@ -134,7 +146,7 @@ Top=6
 Bottom=6
 
 [InputPanel/PrevPage]
-Image=prev.png
+Image=prev.$icon_ext
 
 [InputPanel/PrevPage/ClickMargin]
 Left=5
@@ -143,7 +155,7 @@ Top=4
 Bottom=4
 
 [InputPanel/NextPage]
-Image=next.png
+Image=next.$icon_ext
 
 [InputPanel/NextPage/ClickMargin]
 Left=5
@@ -173,10 +185,10 @@ Top=4
 Bottom=4
 
 [Menu/CheckBox]
-Image=radio.png
+Image=radio.$icon_ext
 
 [Menu/SubMenu]
-Image=arrow.png
+Image=arrow.$icon_ext
 
 [Menu/Highlight]
 Color=$hl_bg
@@ -214,9 +226,9 @@ else
 fi
 
 # 翻页按钮等图标从默认主题复制（幂等）
-for img in arrow.png next.png prev.png radio.png; do
-  src="/usr/share/fcitx5/themes/default/$img"
-  if [[ -f "$src" && ! -f "$out/$img" ]]; then
+for img in arrow next prev radio; do
+  src="$icon_dir/$img.$icon_ext"
+  if [[ -f "$src" && ! -f "$out/$img.$icon_ext" ]]; then
     cp "$src" "$out/"
   fi
 done
