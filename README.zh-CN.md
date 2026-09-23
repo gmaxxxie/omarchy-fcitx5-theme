@@ -66,6 +66,10 @@ omarchy plugin remove gmaxxxie.fcitx5-theme   # 仅移除插件
 | 面板边框 | `selection`（缺失时回退 `muted`） |
 | 菜单分隔线 | `bright_foreground`（缺失时回退边框色） |
 
+面板与高亮保持直角硬边（和 Omarchy 一致）：面板底色 `Color=` + `BorderWidth=1`，边框色取
+主题的 `selection`。生成器不再写 `[AccentColorField]` —— 之前桌面 accent portal（GNOME/KDE
+的系统强调色）会把边框/高亮/分隔线刷成系统色，盖掉主题配色。
+
 深浅主题均支持：`mode = "light"` 的主题使用浅色面板 + 深色文字，选中候选则是白字 +
 压暗后的 accent 底色，无论 accent 多浅都保持可读。
 

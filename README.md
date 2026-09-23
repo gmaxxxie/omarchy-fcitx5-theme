@@ -71,6 +71,12 @@ from this repo:
 | Panel border | `selection` (falls back to `muted`) |
 | Menu separator | `bright_foreground` (falls back to border color) |
 
+The panel and highlight keep Omarchy's hard square edges: `Color=` background with
+`BorderWidth=1`, and the border colour comes from the theme's `selection`. The generator
+no longer writes `[AccentColorField]`, which used to let a desktop accent portal
+(GNOME/KDE) repaint the border, highlight and separator with the system accent colour and
+lose the theme palette.
+
 Both light and dark themes are supported: light themes (`mode = "light"`) get a light panel
 with dark text, and the selected candidate is drawn as white text on a deepened accent so it
 stays readable no matter how light the accent is.

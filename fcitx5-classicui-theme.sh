@@ -97,6 +97,11 @@ for ext in svg png; do
   fi
 done
 
+# 面板/高亮一律直角 + 1px 边框，边框色取主题的 selection（Omarchy 风格的硬边）。
+# 注意：[AccentColorField] 会被移除（见下面 heredoc 末尾），否则桌面 accent
+# portal（GNOME/KDE 的强调色）会把边框/高亮/分隔线刷成系统色，丢掉主题配色。
+# 高亮离面板外沿 = ContentMargin + TextMargin − Highlight/Margin，必须 > borderWidth。
+
 tmp="$out/.theme.conf.tmp"
 cat > "$tmp" <<EOF
 [Metadata]
@@ -208,13 +213,6 @@ Right=8
 Top=6
 Bottom=6
 
-[AccentColorField]
-0=Input Panel Border
-1=Input Panel Highlight Candidate Background
-2=Input Panel Highlight
-3=Menu Border
-4=Menu Separator
-5=Menu Selected Item Background
 EOF
 
 changed=0
