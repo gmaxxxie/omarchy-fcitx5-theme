@@ -41,7 +41,12 @@ Item {
   Process {
     id: syncProc
     command: ["/bin/bash", root.generator, "current", "--quiet"]
-    onFailed: console.warn("fcitx5-theme", "sync failed")
+    // Quickshell.Io.Process has no `failed` signal; use `exited` and check status.
+    // NormalExit=0, CrashExit=1. Warn only when the sync script actually failed.
+    onExited: (exitCode, exitStatus) => {
+      if (exitStatus !== 0 || exitCode !== 0)
+        console.warn("fcitx5-theme", "sync failed", "exit=" + exitCode, "status=" + exitStatus)
+    }
   }
 
   function sync() {
