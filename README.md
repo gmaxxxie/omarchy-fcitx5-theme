@@ -109,6 +109,12 @@ started outside the unit (e.g. D-Bus activated): the unit's instance exits becau
 process still owns `org.fcitx.Fcitx5`, so the old theme keeps being served. `omarchy restart
 xcompose` stops the unit, kills the stray instance, then starts the unit.
 
+The generator does the same and then checks that the unit really owns `org.fcitx.Fcitx5`. It never
+falls back to spawning an unsupervised `fcitx5 -d`: such a stray instance keeps the name, the
+unit's instance exits on arrival, and `Restart=always` turns that into a restart every 2 seconds
+(≈1.35M journal lines in 30 hours, 2026-10-04). If the unit cannot take over, the generator only
+reports the error and leaves recovery to systemd.
+
 **Q: The plugin is enabled but switching themes has no effect?**
 Check whether the service component is loaded: `omarchy plugin list` should show
 `gmaxxxie.fcitx5-theme enabled third-party service`.

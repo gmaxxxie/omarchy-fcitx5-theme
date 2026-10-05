@@ -100,6 +100,11 @@ classicui 只在启动时读主题，`fcitx5-remote -r` 重载配置不会换主
 残留进程仍持有 `org.fcitx.Fcitx5`，unit 里的实例一启动就退出，旧主题继续生效。`omarchy restart
 xcompose` 会先停 unit、杀掉残留实例，再启动 unit。
 
+生成器也是这个流程，并且会确认 unit 真的拿到了 `org.fcitx.Fcitx5`。它不会再退回 `fcitx5 -d`：
+那种 unit 之外的实例会一直占着总线名，unit 里的实例一启动就退出，`Restart=always` 于是变成
+每 2 秒重启一次（2026-10-04 事故：30 小时刷了约 135 万行 journal）。unit 确实接管不了时，
+生成器只报错，恢复交给 systemd 的退避。
+
 **Q: 插件已启用但切主题没反应？**
 检查服务组件是否加载：`omarchy plugin list` 应显示
 `gmaxxxie.fcitx5-theme enabled third-party service`。

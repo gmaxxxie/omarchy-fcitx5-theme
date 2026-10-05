@@ -262,11 +262,44 @@ fi
 
 # 仅在主题实际变化时重启 fcitx5（classicui 只在启动/重载时读主题）
 #
-# 注意：fcitx5 也可能是在 unit 之外被 D-Bus 激活启动的，此时它持有
-# org.fcitx.Fcitx5。`systemctl --user restart` 会返回成功，但 unit 里的实例
-# 一启动就因名字被占而退出，旧进程继续用旧主题 —— 看起来重启了其实没有。
-# 所以先停 unit、杀掉残留实例、等它释放总线名，再启动 unit 让它接管。
+# 注意：fcitx5 也可能是在 unit 之外启动的（D-Bus 激活、手敲 `fcitx5 -d`、
+# `fcitx5 -r --replace -d`），此时它持有 org.fcitx.Fcitx5。`systemctl --user
+# restart` 会返回成功，但 unit 里的实例一启动就因名字被占而退出，旧进程继续用
+# 旧主题 —— 看起来重启了其实没有。
+# 所以先停 unit、杀掉残留实例、等它释放总线名，再启动 unit 让它接管；并且
+# 启动后必须确认 unit 真的拿到了总线名，才算这次换肤成功。
 # （与 /usr/bin/omarchy-restart-xcompose 同一思路。）
+
+# unit 里的实例是否真的接管了输入法：unit 活着 + 持有 org.fcitx.Fcitx5 的是它的主进程。
+# 不能只看 `systemctl --user start` 的返回值：Type=simple 只要 exec 成功就返回 0，
+# 而抢不到总线名的实例会立刻退出，看起来"启动成功"其实什么也没接管。
+fcitx5_unit_has_name() {
+  local pid
+  systemctl --user is-active --quiet omarchy-fcitx5.service || return 1
+  pid="$(systemctl --user show -p MainPID --value omarchy-fcitx5.service 2>/dev/null)" || return 1
+  [[ -n "$pid" && "$pid" != 0 ]] || return 1
+  pgrep -x fcitx5 2>/dev/null | grep -qx "$pid"
+}
+
+# 启动 unit 并确认它接管；最多两轮，第二轮前收掉抢占总线名的 unit 外实例。
+restart_fcitx5_unit() {
+  local try _
+  for try in 1 2; do
+    systemctl --user reset-failed omarchy-fcitx5.service 2>/dev/null || true
+    systemctl --user start omarchy-fcitx5.service 2>/dev/null || true
+    for _ in $(seq 1 50); do   # 最多等 5s 让它抢到总线名
+      fcitx5_unit_has_name && return 0
+      sleep 0.1
+    done
+    pkill -x fcitx5 2>/dev/null || true
+    for _ in $(seq 1 50); do
+      pgrep -x fcitx5 >/dev/null 2>&1 || break
+      sleep 0.1
+    done
+  done
+  return 1
+}
+
 if [[ $changed == 1 ]]; then
   if systemctl --user stop omarchy-fcitx5.service 2>/dev/null; then
     pkill -x fcitx5 2>/dev/null || true
@@ -274,9 +307,12 @@ if [[ $changed == 1 ]]; then
       pgrep -x fcitx5 >/dev/null 2>&1 || break
       sleep 0.1
     done
-    systemctl --user reset-failed omarchy-fcitx5.service 2>/dev/null || true
-    systemctl --user start omarchy-fcitx5.service 2>/dev/null \
-      || fcitx5 -d 2>/dev/null || true
+    if ! restart_fcitx5_unit; then
+      # 不要退回 `fcitx5 -d`：那会拉起一个不受 unit 管理的实例，unit 里的实例
+      # 每 2s 重启一次去抢名字（2026-10-04 那次在 30 小时里刷了 135 万行
+      # journal，把日志顶到上限）。宁可只报错，交给 unit 自己退避恢复。
+      echo "fcitx5 主题: omarchy-fcitx5.service 未能接管输入法，候选框主题可能未生效" >&2
+    fi
   else
     fcitx5-remote -r 2>/dev/null || true
   fi
